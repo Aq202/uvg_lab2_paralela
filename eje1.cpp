@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
+#include <chrono>
 
 using namespace std;
 
@@ -37,6 +38,8 @@ int main() {
     int cant_num;
     cout << "Ingresar cantidad de numeros aleatorios a generar: ";
     cin >> cant_num;
+
+    auto start = std::chrono::high_resolution_clock::now(); // Iniciar medición de tiempo
 
     int* Array = new int[cant_num];
     
@@ -99,6 +102,14 @@ int main() {
     // Liberar memoria
     delete[] Array;
     delete[] numbersArray;
+
+
+    auto end = std::chrono::high_resolution_clock::now(); // Finalizar medición de tiempo
+
+    // Calcula la duración del programa
+    std::chrono::duration<double> duration = end - start;
+
+    std::cout << "Tiempo de ejecución para N = " << cant_num <<": " << duration.count() << " segundos\n";
 
     return 0;
 }
