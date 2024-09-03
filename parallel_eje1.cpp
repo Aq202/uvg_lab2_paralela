@@ -4,19 +4,19 @@ Pablo Andrés Zamora Vásquez - 21780
 Diego Andrés Morales Aquino - 21762
 */
 
-
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
+#include <omp.h>
 
 using namespace std;
 
 #define INFILE "unordered_numbers.csv"
 #define OUTFILE "ordered_numbers.csv"
 
-// Realizar QuickSort en un arreglo
+// Realizar QuickSort en un arreglo con OpenMP
 void par_qsort(int* data, int lo, int hi) {
     if (lo >= hi) return;
     
@@ -35,8 +35,19 @@ void par_qsort(int* data, int lo, int hi) {
         }
     }
     
-    par_qsort(data, lo, h);
-    par_qsort(data, l, hi);
+    // Paralelizar la recursión del QuickSort
+    if (hi - lo > 100) { // Umbral de tolerancia para usar paralelización
+        #pragma omp parallel sections
+        {
+            #pragma omp section
+            par_qsort(data, lo, h);
+            #pragma omp section
+            par_qsort(data, l, hi);
+        }
+    } else {
+        par_qsort(data, lo, h);
+        par_qsort(data, l, hi);
+    }
 }
 
 int main() {
@@ -85,19 +96,18 @@ int main() {
     }
     inFile.close();
 
-    // Ordenar el arreglo de numeros
+    // Ordenar el arreglo usando la versión paralela de QuickSort
     par_qsort(numbersArray, 0, cant_num - 1);
 
-    // abrir archivo de salida para nums ordenados
+    // Guardar los números ordenados en el archivo de salida
     ofstream sortedFile(OUTFILE);
     if (!sortedFile) {
-        cerr << "No se pudo crear el archivo de salida.\n";
+        cerr << "No se pudo crear el archivo de salida '" << OUTFILE << "'.\n";
         delete[] Array;
         delete[] numbersArray;
         return 1;
     }
-
-    // Escribir numeros ordenados en en el archivo
+    
     for (int i = 0; i < cant_num; i++) {
         sortedFile << numbersArray[i];
         if (i < cant_num - 1) {
@@ -106,17 +116,12 @@ int main() {
     }
     sortedFile.close();
 
-    // Liberar memoria
     delete[] Array;
     delete[] numbersArray;
 
-
-    auto end = std::chrono::high_resolution_clock::now(); // Finalizar medición de tiempo
-
-    // Calcular la duración del programa
-    std::chrono::duration<double> duration = end - start;
-
-    std::cout << "Tiempo de ejecución para N = " << cant_num <<": " << duration.count() << " segundos\n";
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    cout << "Tiempo de ejecución: " << elapsed.count() << " segundos\n";
 
     return 0;
 }
